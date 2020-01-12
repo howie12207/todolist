@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+        <title>todolist排版</title>
+        <style>
+            /* ========================all======================== */
+            * {
+                margin: 0;
+                padding: 0;
+                list-style-type: none;
+            }
+            body {
+                background-color: black;
+            }
+            .wrap {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 100%;
+                min-height: 100vh;
+            }
+            .container {
+                display: flex;
+                flex-direction: column;
+                background-color: #fff;
+                max-width: 80%;
+                border-radius: 20px;
+            }
+            .container h1 {
+                padding: 10px;
+                margin: 0 auto;
+            }
+            /* ========================inputBox======================== */
+            .container .inputBox {
+                display: flex;
+                margin: 0 15px;
+            }
+            .container .inputBox input,
+            .container .inputBox .inputBtn {
+                outline: none;
+            }
+
+            /* --------inputTxt-------- */
+            .container .inputBox input {
+                border-radius: 1000px 0 0 1000px;
+                border-color: #ccc;
+                border-width: 1px 0 1px 1px;
+                border-style: solid;
+                padding: 5px 12px;
+                width: 400px;
+            }
+            .completed {
+                text-decoration: line-through;
+            }
+            /* --------inputBtn-------- */
+            .container .inputBox .inputBtn {
+                border-radius: 0 1000px 1000px 0;
+                border-color: #ccc;
+                border-width: 1px 1px 1px 0;
+                border-style: solid;
+                padding: 5px 10px 5px 5px;
+                background-color: #fff;
+                font-size: 20px;
+            }
+            .container .inputBox .inputBtn:hover {
+                cursor: pointer;
+            }
+            /* --------remark-------- */
+            .container .nolist {
+                margin: 20px;
+                font-size: 20px;
+                text-align: center;
+            }
+
+            /* ========================listSection======================== */
+            .container .listSection {
+                padding: 10px;
+                width: 100%;
+            }
+
+            .container .listSection .list {
+                width: 100%;
+                display: flex;
+                align-content: center;
+                padding: 10px;
+            }
+            .container .listSection .list input {
+                border-radius: 10px;
+            }
+            .container .listSection .list .txt {
+                padding: 5px;
+            }
+            .container .listSection .list .editBtn {
+                padding: 4px;
+                border-radius: 10px;
+                background-color: #fff;
+                outline: none;
+                border: 1px solid #ccc;
+                margin-left: 15px;
+            }
+            .container .listSection .list .delBtn {
+                padding: 4px;
+                border-radius: 10px;
+                background-color: #fff;
+                outline: none;
+                border: 1px solid #ccc;
+                margin: 0 5px;
+            }
+            .container .listSection .list .editBtn:hover,
+            .container .listSection .list .delBtn:hover {
+                cursor: pointer;
+                background-color: #ccc;
+                color: white;
+            }
+            /* ========================tag======================== */
+            .container .line {
+                height: 1px;
+                width: 90%;
+                background-color: #ccc;
+                margin: 10px auto;
+            }
+            .container .tag {
+                margin: 20px;
+                align-self: flex-end;
+                display: flex;
+            }
+            .container .tag a {
+                text-decoration: none;
+                padding: 5px 10px;
+                border: 1px solid #ccc;
+                border-radius: 10px;
+                color: black;
+                margin: 0 5px;
+                transform: translateY(0);
+                transition: transform 0.1s;
+            }
+            .container .tag a:hover:not(.active) {
+                background-color: #ccc;
+                color: white;
+                transform: translateY(5px);
+            }
+            .active {
+                background-color: green;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <div class="wrap">
+                <div class="container">
+                    <h1>Todolist by Vue</h1>
+                    <div class="inputBox">
+                        <input
+                            type="text"
+                            placeholder="加入代辦事項"
+                            v-model="inputTodo"
+                            @keyup.enter="inputSubmit"
+                            @keyup.esc="inputCancel"
+                        />
+                        <button class="inputBtn" @click="inputSubmit">+</button>
+                    </div>
+                    <div class="nolist" v-if="nolist">沒有任何代辦事件</div>
+                    <div class="listSection" v-if="!nolist">
+                        <ul>
+                            <li class="list" v-for="(item,index) in filterTodo">
+                                <div class="displayBox" v-if="!item.edit">
+                                    <input type="checkbox" :id="item.id" v-model="item.completed" />
+                                    <label class="txt" :for="item.id" :class="{'completed':item.completed}"
+                                        >{{item.title}}
+                                    </label>
+                                    <button class="editBtn" @click="item.edit=!item.edit">編輯</button>
+                                </div>
+                                <div class="editBox" v-if="item.edit">
+                                    <input
+                                        type="text"
+                                        v-model="item.title"
+                                        @keyup.enter="editDone(item)"
+                                        @keyup.esc="item.edit=!item.edit"
+                                    />
+                                </div>
+                                <button class="delBtn" @click="delItem(item)">刪除</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="line" v-if="!nolist"></div>
+                    <nav class="tag" v-if="!nolist">
+                        <a href="#" @click="tag='全部'" :class="{'active':tag=='全部'}"
+                            >全部 <small>({{amountAll}})</small></a
+                        >
+                        <a href="#" @click="tag='未完成'" :class="{'active':tag=='未完成'}"
+                            >未完成 <small>({{amountNot}})</small></a
+                        >
+                        <a href="#" @click="tag='已完成'" :class="{'active':tag=='已完成'}"
+                            >已完成 <small>({{amountDone}})</small></a
+                        >
+                    </nav>
+                </div>
+            </div>
+        </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.10/vue.common.dev.js"></script>
+        <script>
+            let app = new Vue({
+                el: '#app',
+                data: {
+                    inputTodo: '',
+                    todolist: [],
+                    tag: '全部',
+                    nolist: true,
+                },
+                computed: {
+                    filterTodo() {
+                        let vm = this
+                        if (vm.tag == '全部') {
+                            return this.todolist
+                        } else if (vm.tag == '未完成') {
+                            let newArray = []
+                            vm.todolist.forEach(element => {
+                                if (!element.completed) {
+                                    newArray.push(element)
+                                }
+                            })
+                            return newArray
+                        } else if (vm.tag == '已完成') {
+                            let newArray = []
+                            vm.todolist.forEach(element => {
+                                if (element.completed) {
+                                    newArray.push(element)
+                                }
+                            })
+                            return newArray
+                        }
+                    },
+                    amountAll() {
+                        return this.todolist.length
+                    },
+                    amountNot() {
+                        let vm = this
+                        let newArray = []
+                        vm.todolist.forEach(element => {
+                            if (!element.completed) {
+                                newArray.push(element)
+                            }
+                        })
+                        return newArray.length
+                    },
+                    amountDone() {
+                        let vm = this
+                        let newArray = []
+                        vm.todolist.forEach(element => {
+                            if (element.completed) {
+                                newArray.push(element)
+                            }
+                        })
+                        return newArray.length
+                    },
+                },
+                methods: {
+                    inputSubmit() {
+                        if (this.inputTodo.trim()) {
+                            let id = Math.floor(Date.now())
+                            let title = this.inputTodo
+                            this.todolist.push({ id: id, title: title, completed: false, edit: false })
+                        }
+                        this.inputTodo = ''
+                        this.nolist = false
+                    },
+                    inputCancel() {
+                        this.inputTodo = ''
+                    },
+                    delItem(item) {
+                        this.todolist.forEach((element, key) => {
+                            if (element.id == item.id) {
+                                this.todolist.splice(key, 1)
+                            }
+                        })
+                        if (this.todolist.length == 0) {
+                            this.nolist = true
+                        }
+                    },
+                    editDone(item) {
+                        let vm = this
+                        vm.todolist.forEach(element => {
+                            if (element.id == item.id) {
+                                element.title = item.title
+                            }
+                        })
+                        item.edit = false
+                    },
+                },
+            })
+        </script>
+    </body>
+</html>
